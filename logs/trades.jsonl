@@ -1,1 +1,5 @@
 {"time": "2026-10-13T18:27:20.049275+00:00", "event": "order", "mode": "paper", "id": "e8bfaf92-0d77-4a27-84b0-11b774d41893", "symbol": "SPY", "side": "buy", "qty": 128, "price": 777.9099731445312}
+{"time": "2026-10-13T18:33:25.276579+00:00", "event": "order", "mode": "paper", "id": "ae15ac77-c057-4f42-97dc-684b9e0cac37", "symbol": "SPY", "side": "sell", "qty": 128, "price": 777.7899780273438}
+{"time": "2026-10-13T18:33:25.439653+00:00", "event": "order", "mode": "paper", "id": "4427c39a-66f0-486a-a5fd-31e6a1132906", "symbol": "XLE", "side": "buy", "qty": 497, "price": 66.9749984741211}
+{"time": "2026-10-13T18:33:25.512204+00:00", "event": "order", "mode": "paper", "id": "4835c0da-5166-426f-abb1-ed1edce713ad", "symbol": "XLK", "side": "buy", "qty": 170, "price": 195.94500732421875}
+{"time": "2026-10-13T18:33:25.591547+00:00", "event": "order", "mode": "paper", "id": "f26cdbc8-bc79-4081-8f1e-be15a2e5b6e8", "symbol": "XLV", "side": "buy", "qty": 196, "price": 169.8699951171875}
