@@ -3,3 +3,4 @@
 {"time": "2026-10-13T19:08:04.707170+00:00", "event": "order", "mode": "paper", "id": "bc8f5071-e2af-4357-87ad-52963faf3e33", "symbol": "SPY", "side": "buy", "qty": 0.513, "price": 778.239990234375}
 {"time": "2026-10-13T19:14:28.707812+00:00", "event": "no_change", "strategy": "conservative_trend", "targets": {"SPY": 0.4, "IEF": 0.6}}
 {"time": "2026-10-13T19:20:36.003794+00:00", "event": "no_change", "strategy": "conservative_trend", "targets": {"SPY": 0.4, "IEF": 0.6}}
+{"time": "2026-10-13T20:06:31.223205+00:00", "event": "skip", "reason": "market closed"}
