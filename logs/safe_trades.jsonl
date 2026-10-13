@@ -1,3 +1,4 @@
 {"time": "2026-10-13T19:06:05.763871+00:00", "event": "order", "mode": "paper", "id": "3af817be-0d48-47a4-8c04-7a4a7b83a0cd", "symbol": "IEF", "side": "buy", "qty": 6, "price": 89.57009887695312}
 {"time": "2026-10-13T19:08:04.674469+00:00", "event": "order", "mode": "paper", "id": "6238c4b5-03fa-4b9c-9207-4e1081bf4971", "symbol": "IEF", "side": "buy", "qty": 0.698, "price": 89.57499694824219}
 {"time": "2026-10-13T19:08:04.707170+00:00", "event": "order", "mode": "paper", "id": "bc8f5071-e2af-4357-87ad-52963faf3e33", "symbol": "SPY", "side": "buy", "qty": 0.513, "price": 778.239990234375}
+{"time": "2026-10-13T19:14:28.707812+00:00", "event": "no_change", "strategy": "conservative_trend", "targets": {"SPY": 0.4, "IEF": 0.6}}
