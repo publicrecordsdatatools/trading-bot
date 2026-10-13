@@ -27,7 +27,8 @@ Then: set `live.enabled = true` and `live.max_capital` in `config.toml`, add `TR
 - `src/tradingbot/risk.py` – hard limits, kill switch state in `logs/risk_state.json`.
 - `src/tradingbot/broker.py` – Alpaca wrapper. `runner.py` – the daily job.
 - `scripts/backtest.py` – writes `reports/backtest-<date>.md/png`.
-- `.github/workflows/` – `tests` (on push), `backtest` (manual), `paper-trade` (weekdays ~15:45 ET).
+- `src/tradingbot/lab.py` + `scripts/lab_backtest.py` – aggressive lab (3x leveraged ETFs), paper-only experiments, never traded by the runner. Includes a 1999+ crash test with a simulated 3x QQQ fund and $100→$1,000 odds. Params under `[lab]` in `config.toml`.
+- `.github/workflows/` – `tests` (on push), `backtest` and `lab-backtest` (manual), `paper-trade` (weekdays ~15:45 ET).
 
 ## Current state
 
@@ -50,6 +51,7 @@ Then: set `live.enabled = true` and `live.max_capital` in `config.toml`, add `TR
 
 ## Decision log
 
+- 2026-10-13: Sam asked how to turn $100 into $1,000 with day trading and penny stocks. Told them plainly there's no reliable way and most day traders lose. They asked for aggressive strategies anyway, so built a separate paper-only lab with 3x leveraged ETF strategies. Penny stocks left out: no free historical data that includes delisted stocks, so any backtest would be badly biased. Leverage is allowed in the lab only.
 - 2026-10-13: Sam asked for more active trading. Added `sector_rotation` (weekly) and `rsi_basket` (RSI(2) dips across SPY/QQQ/IWM/DIA). Backtest 2019+: sector_rotation 10.6% CAGR, -15% max DD; rsi_basket 3.7%, -9%; SPY 17.5%, -34%. More trading did not earn more. Switched paper to sector_rotation (smallest drawdown, return close to trend_sma).
 - 2026-10-13: First real backtest run; kept trend_sma for its lower drawdown, accepting lower return than SPY in the 2019+ bull market.
 - 2026-10-13: Initial build. Alpaca paper, US ETFs, daily bars, $1,000 planned live capital. Default strategy `trend_sma`.

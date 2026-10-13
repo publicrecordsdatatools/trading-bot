@@ -44,6 +44,35 @@ entry_below = 10
 exit_above = 70
 trend_sma_days = 200
 
+# Aggressive lab: paper-only experiments with 3x leveraged ETFs (src/tradingbot/lab.py).
+# The daily runner never trades these.
+[lab]
+crash_test_start = "1999-03-10"
+leveraged_annual_drag = 0.025
+
+[lab.lev_trend]
+signal = "QQQ"
+trade = "TQQQ"
+sma_days = 200
+
+[lab.lev_rotation]
+lookback_days = 63
+sma_days = 200
+
+[lab.lev_rotation.pairs]
+TQQQ = "QQQ"
+UPRO = "SPY"
+TNA = "IWM"
+SOXL = "SOXX"
+
+[lab.lev_dip]
+signal = "QQQ"
+trade = "TQQQ"
+rsi_days = 2
+entry_below = 10
+exit_above = 70
+trend_sma_days = 200
+
 [risk]
 max_single_stock_weight = 0.25
 # ETFs may be held up to 100% of the account.
