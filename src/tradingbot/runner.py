@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 
 import pandas as pd
 
-from . import data, lab, risk, strategies
+from . import ai_analyst, data, lab, risk, strategies
 from .config import ROOT, load_config
 
 log = logging.getLogger("tradingbot")
@@ -23,6 +23,8 @@ LAB_TRADE_LOG = ROOT / "logs" / "lab_trades.jsonl"
 LAB_STATE_FILE = ROOT / "logs" / "lab_risk_state.json"
 SAFE_TRADE_LOG = ROOT / "logs" / "safe_trades.jsonl"
 SAFE_STATE_FILE = ROOT / "logs" / "safe_risk_state.json"
+AI_TRADE_LOG = ROOT / "logs" / "ai_trades.jsonl"
+AI_STATE_FILE = ROOT / "logs" / "ai_risk_state.json"
 
 
 def trading_mode(cfg: dict) -> str:
@@ -72,7 +74,8 @@ def _record(event: dict, path=None) -> None:
 def resolve_profile(cfg: dict, profile: str) -> dict:
     """What a run trades and where it keeps its state. Three accounts, one per risk level:
     "main" (middle) is the main strategy; "safe" (low) and "lab" (high) each have their own
-    Alpaca paper account. Only "main" can ever go live."""
+    Alpaca paper account. "ai" is the AI analyst experiment, which borrows the low-risk account
+    while "safe" is paused. Only "main" can ever go live."""
     if profile == "main":
         name = cfg["strategy"]["active"]
         params = cfg["strategy"][name]
@@ -125,6 +128,21 @@ def resolve_profile(cfg: dict, profile: str) -> dict:
             "keys": ("ALPACA_LAB_API_KEY", "ALPACA_LAB_SECRET_KEY"),
             "fractional": lp.get("fractional", False),
         }
+    if profile == "ai":
+        params = cfg["ai"]
+        keys = ("ALPACA_SAFE_API_KEY", "ALPACA_SAFE_SECRET_KEY")
+        return {
+            "name": "ai_news",
+            "params": params,
+            "weights": lambda closes: ai_analyst.target_weights(closes, params, keys),
+            "symbols": ai_analyst.symbols_for(params),
+            "risk": cfg["risk"],
+            "state_file": AI_STATE_FILE,
+            "log": AI_TRADE_LOG,
+            "mode": "paper",
+            "keys": keys,
+            "fractional": params.get("fractional", False),
+        }
     raise ValueError(f"unknown profile {profile}")
 
 
@@ -173,7 +191,11 @@ def run(
     name = prof["name"]
     if closes is None:
         closes = data.load_closes(prof["symbols"], refresh=True)
-    weights = prof["weights"](closes).iloc[-1]
+    try:
+        weights = prof["weights"](closes).iloc[-1]
+    except Exception as e:  # e.g. the AI analyst can't reach the news feed or Claude; trade nothing today
+        record({"event": "error", "stage": "signal", "strategy": name, "error": str(e)})
+        raise
     targets = risk.clamp_weights({s: float(w) for s, w in weights.items() if w > 0}, rcfg)
 
     positions = broker.positions()
@@ -223,7 +245,7 @@ def main() -> None:
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--profile", choices=["main", "safe", "lab"], default="main")
+    parser.add_argument("--profile", choices=["main", "safe", "lab", "ai"], default="main")
     run(profile=parser.parse_args().profile)
 
 

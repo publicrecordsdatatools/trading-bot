@@ -1,0 +1,19 @@
+name: ai-preview
+# Run by hand from the Actions tab to check the AI analyst setup: fetches today's news, asks
+# Claude for scores, and shows them in the run summary. Trades and saves nothing; costs one API call.
+on:
+  workflow_dispatch:
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    env:
+      ALPACA_SAFE_API_KEY: ${{ secrets.ALPACA_SAFE_API_KEY }}
+      ALPACA_SAFE_SECRET_KEY: ${{ secrets.ALPACA_SAFE_SECRET_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: python scripts/ai_preview.py

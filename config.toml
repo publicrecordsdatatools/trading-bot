@@ -54,6 +54,7 @@ trend_sma_days = 200
 
 # Low-risk account: its own Alpaca paper account (secrets ALPACA_SAFE_API_KEY / ALPACA_SAFE_SECRET_KEY).
 # Uses the main [risk] limits. Paper only for now.
+# Paused since 2026-10-13: the AI analyst experiment ([ai] below) uses this account instead.
 [safe]
 strategy = "conservative_trend"
 # Buy fractions of a share, so a $1,000 account can hold its 40% slice of SPY.
@@ -98,6 +99,26 @@ fractional = true
 daily_loss_limit = 0.20
 kill_switch_drawdown = 0.60
 extra_etfs = ["TQQQ", "UPRO", "TNA", "SOXL", "SOXX"]
+
+# AI analyst experiment (src/tradingbot/ai_analyst.py): each trading day Claude reads recent news for
+# the watchlist, scores each stock from -10 to +10, and the runner buys the top scores. Paper only.
+# Runs in the low-risk Alpaca account (ALPACA_SAFE_* secrets), so the safe profile is paused in the
+# daily job. Needs the ANTHROPIC_API_KEY secret. Can't be backtested fairly: only forward results count.
+[ai]
+model = "claude-opus-5-5"
+effort = "medium"
+watchlist = ["AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA", "AVGO", "AMD", "NFLX", "CRM",
+             "JPM", "BAC", "V", "MA", "UNH", "LLY", "JNJ", "XOM", "CVX", "WMT", "COST", "HD", "PG", "KO"]
+# Buy up to top_n stocks scoring at least min_score, equal weight; unused slots hold the filler ETF.
+top_n = 5
+min_score = 3
+filler = "SPY"
+news_lookback_days = 3
+news_per_symbol = 10
+fractional = true
+# For the cost estimate saved with each day's scores (USD per million tokens).
+price_input_per_mtok = 4.0
+price_output_per_mtok = 20.0
 
 [risk]
 max_single_stock_weight = 0.25
