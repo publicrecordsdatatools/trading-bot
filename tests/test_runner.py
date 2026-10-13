@@ -39,6 +39,7 @@ class FakeBroker:
 def cfg(cfg):
     """Runner mechanics are tested with the simple SPY/IEF trend strategy, whatever config.toml has active."""
     cfg["strategy"]["active"] = "trend_sma"
+    cfg["strategy"]["fractional"] = False
     return cfg
 
 

@@ -11,6 +11,8 @@ cost_per_trade = 0.0005
 [strategy]
 # Which strategy the paper runner trades. One of: trend_sma, conservative_trend, dual_momentum, rsi_reversion, sector_rotation, rsi_basket
 active = "sector_rotation"
+# Buy fractions of a share, so a small account can split evenly across several ETFs.
+fractional = true
 
 [strategy.trend_sma]
 symbol = "SPY"

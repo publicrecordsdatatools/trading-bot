@@ -86,7 +86,7 @@ def resolve_profile(cfg: dict, profile: str) -> dict:
             "log": None,  # TRADE_LOG
             "mode": trading_mode(cfg),
             "keys": ("ALPACA_API_KEY", "ALPACA_SECRET_KEY"),
-            "fractional": False,
+            "fractional": cfg["strategy"].get("fractional", False),
         }
     if profile == "safe":
         name = cfg["safe"]["strategy"]
