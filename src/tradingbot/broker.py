@@ -12,13 +12,13 @@ class Account:
 
 
 class AlpacaBroker:
-    def __init__(self, live: bool = False):
+    def __init__(self, live: bool = False, key_env: str = "ALPACA_API_KEY", secret_env: str = "ALPACA_SECRET_KEY"):
         from alpaca.trading.client import TradingClient
 
-        key = os.environ.get("ALPACA_API_KEY")
-        secret = os.environ.get("ALPACA_SECRET_KEY")
+        key = os.environ.get(key_env)
+        secret = os.environ.get(secret_env)
         if not key or not secret:
-            raise RuntimeError("Set ALPACA_API_KEY and ALPACA_SECRET_KEY (see .env.example)")
+            raise RuntimeError(f"Set {key_env} and {secret_env} (see .env.example)")
         self.live = live
         self.client = TradingClient(key, secret, paper=not live)
 

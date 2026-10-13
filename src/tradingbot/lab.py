@@ -94,6 +94,14 @@ LAB_STRATEGIES = {
 }
 
 
+def symbols_for(params: dict) -> list[str]:
+    """Every symbol a lab strategy needs price data for."""
+    syms = [params[k] for k in ("signal", "trade") if k in params]
+    for lev, one in (params.get("pairs") or {}).items():
+        syms += [lev, one]
+    return list(dict.fromkeys(syms))
+
+
 def simulate_leveraged(prices: pd.Series, factor: float = 3.0, annual_drag: float = 0.025) -> pd.Series:
     """A synthetic daily-reset leveraged ETF built from an index's prices, for years before the
     real fund existed. `annual_drag` stands in for fees plus borrowing costs (an approximation)."""

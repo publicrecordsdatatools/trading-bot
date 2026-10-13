@@ -46,6 +46,8 @@ def cfg(cfg):
 def isolated_state(tmp_path, monkeypatch):
     monkeypatch.setattr(risk, "STATE_FILE", tmp_path / "risk_state.json")
     monkeypatch.setattr(runner, "TRADE_LOG", tmp_path / "trades.jsonl")
+    monkeypatch.setattr(runner, "LAB_TRADE_LOG", tmp_path / "lab_trades.jsonl")
+    monkeypatch.setattr(runner, "LAB_STATE_FILE", tmp_path / "lab_risk_state.json")
     monkeypatch.delenv("TRADING_MODE", raising=False)
 
 
@@ -144,3 +146,41 @@ def test_switch_to_sector_rotation_sells_spy_and_buys_sectors(cfg):
     assert broker.submitted[0] == ("SPY", "sell", 16)
     bought = [s for s, side, _ in broker.submitted if side == "buy"]
     assert len(bought) == 3 and set(bought) <= set(sectors)
+
+
+@pytest.fixture
+def qqq_dip():
+    """Nasdaq in a long uptrend, then a sharp 3-day drop that is still above the 200-day average."""
+    from tradingbot import lab
+
+    idx = pd.bdate_range("2023-01-02", periods=300)
+    qqq = pd.Series(range(300), index=idx, dtype=float) + 300
+    qqq.iloc[-3:] = [590.0, 570.0, 550.0]
+    closes = pd.DataFrame({"QQQ": qqq})
+    closes["TQQQ"] = lab.simulate_leveraged(closes["QQQ"], 3.0, 0.0)
+    return closes
+
+
+def test_lab_buys_tqqq_on_dip_with_its_own_log_and_state(cfg, qqq_dip):
+    volumes = pd.DataFrame(1e9, index=qqq_dip.index, columns=qqq_dip.columns)
+    broker = FakeBroker(equity=100_000.0, last_equity=104_000.0, cash=100_000.0)
+    runner.run(broker, qqq_dip, volumes, cfg, profile="lab")
+
+    assert [(s, side) for s, side, _ in broker.submitted] == [("TQQQ", "buy")]
+    assert runner.LAB_TRADE_LOG.exists() and not runner.TRADE_LOG.exists()
+    assert runner.LAB_STATE_FILE.exists() and not risk.STATE_FILE.exists()
+
+
+def test_lab_never_goes_live(cfg, monkeypatch):
+    monkeypatch.setenv("TRADING_MODE", "live")
+    cfg["live"]["enabled"] = True
+    assert runner.resolve_profile(cfg, "lab")["mode"] == "paper"
+    assert runner.resolve_profile(cfg, "lab")["keys"] == ("ALPACA_LAB_API_KEY", "ALPACA_LAB_SECRET_KEY")
+
+
+def test_lab_kill_switch_is_separate_from_main(cfg, qqq_dip):
+    risk.RiskState(peak_equity=1e9, kill_switch=True, kill_reason="main account").save(risk.STATE_FILE)
+    volumes = pd.DataFrame(1e9, index=qqq_dip.index, columns=qqq_dip.columns)
+    broker = FakeBroker(equity=100_000.0, last_equity=100_000.0, cash=100_000.0)
+    runner.run(broker, qqq_dip, volumes, cfg, profile="lab")
+    assert broker.submitted and not broker.closed_all

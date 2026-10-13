@@ -13,11 +13,13 @@ from datetime import datetime, timezone
 
 import pandas as pd
 
-from . import data, risk, strategies
+from . import data, lab, risk, strategies
 from .config import ROOT, load_config
 
 log = logging.getLogger("tradingbot")
 TRADE_LOG = ROOT / "logs" / "trades.jsonl"
+LAB_TRADE_LOG = ROOT / "logs" / "lab_trades.jsonl"
+LAB_STATE_FILE = ROOT / "logs" / "lab_risk_state.json"
 
 
 def trading_mode(cfg: dict) -> str:
@@ -51,12 +53,54 @@ def plan_orders(
     return sorted(orders, key=lambda o: o.side != "sell")
 
 
-def record(event: dict) -> None:
-    TRADE_LOG.parent.mkdir(exist_ok=True)
+def _record(event: dict, path=None) -> None:
+    path = path or TRADE_LOG
+    path.parent.mkdir(exist_ok=True)
     event = {"time": datetime.now(timezone.utc).isoformat(), **event}
-    with open(TRADE_LOG, "a") as f:
+    with open(path, "a") as f:
         f.write(json.dumps(event) + "\n")
     log.info(json.dumps(event))
+
+
+def resolve_profile(cfg: dict, profile: str) -> dict:
+    """What a run trades and where it keeps its state. "main" is the real strategy; "lab" is the
+    aggressive experiment in its own Alpaca paper account, which can never go live."""
+    if profile == "main":
+        name = cfg["strategy"]["active"]
+        params = cfg["strategy"][name]
+        return {
+            "name": name,
+            "params": params,
+            "weights": lambda closes: strategies.target_weights(name, closes, params),
+            "symbols": strategies.symbols_for(name, params),
+            "risk": cfg["risk"],
+            "state_file": None,  # risk.STATE_FILE
+            "log": None,  # TRADE_LOG
+            "mode": trading_mode(cfg),
+            "keys": ("ALPACA_API_KEY", "ALPACA_SECRET_KEY"),
+        }
+    if profile == "lab":
+        lp = cfg["lab"]["paper"]
+        name = lp["strategy"]
+        params = cfg["lab"][name]
+        rcfg = {
+            **cfg["risk"],
+            "daily_loss_limit": lp["daily_loss_limit"],
+            "kill_switch_drawdown": lp["kill_switch_drawdown"],
+            "etfs": cfg["risk"]["etfs"] + lp["extra_etfs"],
+        }
+        return {
+            "name": name,
+            "params": params,
+            "weights": lambda closes: lab.LAB_STRATEGIES[name](closes, **params),
+            "symbols": lab.symbols_for(params),
+            "risk": rcfg,
+            "state_file": LAB_STATE_FILE,
+            "log": LAB_TRADE_LOG,
+            "mode": "paper",
+            "keys": ("ALPACA_LAB_API_KEY", "ALPACA_LAB_SECRET_KEY"),
+        }
+    raise ValueError(f"unknown profile {profile}")
 
 
 def run(
@@ -64,13 +108,18 @@ def run(
     closes: pd.DataFrame | None = None,
     volumes: pd.DataFrame | None = None,
     cfg: dict | None = None,
+    profile: str = "main",
 ) -> list[dict]:
     cfg = cfg or load_config()
-    mode = trading_mode(cfg)
+    prof = resolve_profile(cfg, profile)
+    mode = prof["mode"]
     if broker is None:
         from .broker import AlpacaBroker
 
-        broker = AlpacaBroker(live=mode == "live")
+        broker = AlpacaBroker(live=mode == "live", key_env=prof["keys"][0], secret_env=prof["keys"][1])
+
+    def record(event: dict) -> None:
+        _record(event, prof["log"])
 
     if not broker.market_open():
         record({"event": "skip", "reason": "market closed"})
@@ -79,11 +128,11 @@ def run(
         record({"event": "skip", "reason": "orders from an earlier run are still open"})
         return []
 
-    rcfg = cfg["risk"]
-    state = risk.RiskState.load()
+    rcfg = prof["risk"]
+    state = risk.RiskState.load(prof["state_file"])
     account = broker.account()
     state = risk.update_drawdown(state, account.equity, rcfg)
-    state.save()
+    state.save(prof["state_file"])
 
     if state.kill_switch:
         if broker.positions():
@@ -96,12 +145,10 @@ def run(
         record({"event": "skip", "reason": "daily loss limit reached", "equity": account.equity})
         return []
 
-    name = cfg["strategy"]["active"]
-    params = cfg["strategy"][name]
-    symbols = strategies.symbols_for(name, params)
+    name = prof["name"]
     if closes is None:
-        closes = data.load_closes(symbols, refresh=True)
-    weights = strategies.target_weights(name, closes, params).iloc[-1]
+        closes = data.load_closes(prof["symbols"], refresh=True)
+    weights = prof["weights"](closes).iloc[-1]
     targets = risk.clamp_weights({s: float(w) for s, w in weights.items() if w > 0}, rcfg)
 
     positions = broker.positions()
@@ -144,7 +191,11 @@ def main() -> None:
         load_dotenv(ROOT / ".env")
     except ImportError:
         pass
-    run()
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--profile", choices=["main", "lab"], default="main")
+    run(profile=parser.parse_args().profile)
 
 
 if __name__ == "__main__":

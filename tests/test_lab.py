@@ -61,3 +61,8 @@ def test_lev_rotation_holds_one_fund_or_cash(lev_closes):
     w = lab.lev_rotation(lev_closes)
     lev = ["TQQQ", "UPRO", "TNA", "SOXL"]
     assert set((w[lev] > 0).sum(axis=1).unique()) <= {0, 1}
+
+
+def test_symbols_for_lab_strategies():
+    assert lab.symbols_for({"signal": "QQQ", "trade": "TQQQ"}) == ["QQQ", "TQQQ"]
+    assert set(lab.symbols_for({"pairs": {"TQQQ": "QQQ", "UPRO": "SPY"}})) == {"TQQQ", "QQQ", "UPRO", "SPY"}
