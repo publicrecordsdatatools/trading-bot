@@ -37,7 +37,7 @@ Then: set `live.enabled = true` and `live.max_capital` in `config.toml`, add `TR
 - Lab results (`reports/lab-2026-10-13.md`): real 3x ETFs 2011–2026: TQQQ hold 40.9%/yr but -82% max DD; lev_trend 33.2%/yr, -56%; lev_rotation 26.4%, -71%; lev_dip 14.1%, -46%. Crash test from the March 2000 peak (simulated 3x QQQ, drag calibrated to match real TQQQ): 3x hold went to ~zero (-100%), lev_trend -95% DD, lev_dip held up best (12.0%/yr, -45%). Best odds of $100→$1,000 in 5 years: TQQQ hold 24% of windows (2011+) / 12% (2000+), with 16% / 43% of windows halving first.
 - Lab paper trading (connected 2026-10-13, $1,000 fake balance): `lev_dip` (RSI(2) dips in QQQ, trades TQQQ) in a second Alpaca paper account, keys `ALPACA_LAB_API_KEY`/`ALPACA_LAB_SECRET_KEY`. Run with `python -m tradingbot.runner --profile lab`; own log `logs/lab_trades.jsonl` and state `logs/lab_risk_state.json`. Looser limits in `[lab.paper]` (20% daily loss, 60% kill switch) because 3x ETFs swing hard. Always paper; the code refuses live for the lab profile.
 - Three paper accounts by risk level (Sam's request; all connected 2026-10-13, safe and lab at $1,000 fake balance): high = lab `lev_dip`; middle = main `sector_rotation`; low = safe `conservative_trend` (40% SPY in uptrends, rest IEF; 100% IEF in downtrends). Safe account keys `ALPACA_SAFE_API_KEY`/`ALPACA_SAFE_SECRET_KEY`, `--profile safe`, own log `logs/safe_trades.jsonl` and state `logs/safe_risk_state.json`, main `[risk]` limits, paper only, fractional shares (all three accounts now use them) (a $1,000 account can't afford a whole SPY share for its 40% slice). Backtest: conservative_trend 6.0%/yr, -9% max DD in-sample; 5.0%/yr, -20.5% out-of-sample (2022, when bonds fell with stocks). Half the volatility of sector_rotation (7% vs 14%) but its worst drop was not smaller. rsi_basket is the alternative if smallest drops matter most (-9% worst, ~3.5%/yr).
-- Paper trading live since 2026-10-13 (Alpaca paper, ~$100k fake account). First order: buy 128 SPY.
+- Main paper account reset from $100k to $1,000 on 2026-10-13 (Sam's call, so all three accounts start equal). Cleared `peak_equity` in `logs/risk_state.json` at the same time. If an account is ever reset or resized again, clear that profile's state file too, or the kill switch reads the drop as a loss.
 
 ## Maintenance checklist ("check on the trading system")
 
@@ -54,6 +54,7 @@ Then: set `live.enabled = true` and `live.max_capital` in `config.toml`, add `TR
 
 ## Decision log
 
+- 2026-10-13: Main paper account resized to $1,000 to match the other two and the planned live size.
 - 2026-10-13: Safe account's first run bought only IEF because whole shares couldn't fit SPY into $400. Added fractional shares (`fractional = true`) for the safe and lab accounts; main stays whole-share. Broker rejections are now logged as `order_error` instead of crashing the run.
 - 2026-10-13: Sam asked for three accounts at high, middle and low risk. Added `conservative_trend` and a third paper account (`safe`) for it. Chose it over `trend_sma` for low risk because trend_sma's risk was about the same as sector_rotation's.
 - 2026-10-13: Sam chose to paper trade `lev_dip` from the lab, alongside main `sector_rotation`, in a separate paper account.
