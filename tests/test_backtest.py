@@ -55,3 +55,42 @@ def test_metrics_drawdown():
     returns = pd.Series([0.0, 0.10, -0.50, 0.20])
     m = backtest.metrics(returns)
     assert m["max_drawdown"] == pytest.approx(-0.50)
+
+
+@pytest.fixture
+def sector_closes():
+    import numpy as np
+
+    rng = np.random.default_rng(1)
+    idx = pd.bdate_range("2015-01-01", periods=700)
+    cols = ["SPY", "IEF", "XLK", "XLF", "XLE", "XLV"]
+    rets = rng.normal(0.0004, 0.01, size=(len(idx), len(cols)))
+    return pd.DataFrame(100 * np.cumprod(1 + rets, axis=0), index=idx, columns=cols)
+
+
+def test_sector_rotation_holds_top_n_or_safe(sector_closes):
+    w = strategies.sector_rotation(sector_closes, risk_assets=["XLK", "XLF", "XLE", "XLV"], top_n=2)
+    live = w.iloc[260:]
+    assert ((live.sum(axis=1) - 1.0).abs() < 1e-9).all()
+    held_sectors = (live[["XLK", "XLF", "XLE", "XLV"]] > 0).sum(axis=1)
+    assert set(held_sectors.unique()) <= {0, 2}
+    assert (live.loc[held_sectors == 0, "IEF"] == 1.0).all()
+
+
+def test_sector_rotation_rebalances_weekly_and_no_lookahead(sector_closes):
+    params = {"risk_assets": ["XLK", "XLF", "XLE", "XLV"], "top_n": 2}
+    w = strategies.sector_rotation(sector_closes, **params)
+    changed_days = w.index[(w.diff().abs().sum(axis=1) > 0).values][:-1]
+    weeks = pd.Series(w.index.isocalendar().week.values, index=w.index)
+    next_week = weeks.shift(-1)
+    assert (weeks[changed_days] != next_week[changed_days]).all(), "trades only on the last day of a week"
+    cut = 500
+    trunc = strategies.sector_rotation(sector_closes.iloc[:cut], **params)
+    # Every row except the (possibly partial) last week must match.
+    pd.testing.assert_frame_equal(w.iloc[: cut - 5], trunc.iloc[: cut - 5])
+
+
+def test_rsi_basket_splits_account(closes):
+    w = strategies.rsi_basket(closes, symbols=["SPY", "QQQ"])
+    assert (w[["SPY", "QQQ"]].isin([0.0, 0.5])).all().all()
+    assert (w.sum(axis=1) <= 1.0 + 1e-9).all()

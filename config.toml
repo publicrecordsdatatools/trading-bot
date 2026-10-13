@@ -9,7 +9,7 @@ out_of_sample_start = "2019-01-01"
 cost_per_trade = 0.0005
 
 [strategy]
-# Which strategy the paper runner trades. One of: trend_sma, dual_momentum, rsi_reversion
+# Which strategy the paper runner trades. One of: trend_sma, dual_momentum, rsi_reversion, sector_rotation, rsi_basket
 active = "trend_sma"
 
 [strategy.trend_sma]
@@ -29,10 +29,26 @@ entry_below = 10
 exit_above = 70
 trend_sma_days = 200
 
+[strategy.sector_rotation]
+risk_assets = ["XLK", "XLF", "XLE", "XLV", "XLI", "XLY", "XLP", "XLU", "XLB"]
+safe_asset = "IEF"
+market = "SPY"
+top_n = 3
+lookback_days = 63
+market_sma_days = 200
+
+[strategy.rsi_basket]
+symbols = ["SPY", "QQQ", "IWM", "DIA"]
+rsi_days = 2
+entry_below = 10
+exit_above = 70
+trend_sma_days = 200
+
 [risk]
 max_single_stock_weight = 0.25
 # ETFs may be held up to 100% of the account.
-etfs = ["SPY", "QQQ", "EFA", "IEF", "TLT", "GLD", "BIL"]
+etfs = ["SPY", "QQQ", "EFA", "IEF", "TLT", "GLD", "BIL", "IWM", "DIA",
+        "XLK", "XLF", "XLE", "XLV", "XLI", "XLY", "XLP", "XLU", "XLB"]
 daily_loss_limit = 0.03
 kill_switch_drawdown = 0.15
 min_price = 5.0

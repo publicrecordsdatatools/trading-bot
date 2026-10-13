@@ -82,20 +82,73 @@ def rsi_reversion(
     return weights
 
 
+def sector_rotation(
+    closes: pd.DataFrame,
+    risk_assets: list[str] = ("XLK", "XLF", "XLE", "XLV", "XLI", "XLY", "XLP", "XLU", "XLB"),
+    safe_asset: str = "IEF",
+    market: str = "SPY",
+    top_n: int = 3,
+    lookback_days: int = 63,
+    market_sma_days: int = 200,
+) -> pd.DataFrame:
+    """Every week, hold the `top_n` sectors with the best trailing return, equally weighted.
+    When the market is below its long-term average, hold `safe_asset` instead."""
+    risk_assets = list(risk_assets)
+    momentum = closes[risk_assets].pct_change(lookback_days)
+    market_up = closes[market] > closes[market].rolling(market_sma_days).mean()
+    # Rebalance on the last trading day of each week (next trading day is in a later week).
+    next_day = closes.index.to_series().shift(-1)
+    next_day.iloc[-1] = closes.index[-1] + pd.offsets.BDay(1)
+    week_end = next_day.dt.isocalendar().week.values != closes.index.isocalendar().week.values
+
+    weights = pd.DataFrame(float("nan"), index=closes.index, columns=closes.columns)
+    warm = max(lookback_days, market_sma_days)
+    for i in range(warm, len(closes)):
+        if not week_end[i]:
+            continue
+        day = closes.index[i]
+        weights.loc[day] = 0.0
+        if market_up.iloc[i]:
+            picks = momentum.loc[day].nlargest(top_n).index
+            weights.loc[day, picks] = 1.0 / top_n
+        else:
+            weights.loc[day, safe_asset] = 1.0
+    return weights.ffill().fillna(0.0)
+
+
+def rsi_basket(
+    closes: pd.DataFrame,
+    symbols: list[str] = ("SPY", "QQQ", "IWM", "DIA"),
+    rsi_days: int = 2,
+    entry_below: float = 10,
+    exit_above: float = 70,
+    trend_sma_days: int = 200,
+) -> pd.DataFrame:
+    """Run the RSI dip-buying rule on several ETFs at once, each with an equal slice of the account."""
+    symbols = list(symbols)
+    weights = pd.DataFrame(0.0, index=closes.index, columns=closes.columns)
+    for sym in symbols:
+        one = rsi_reversion(closes, sym, rsi_days, entry_below, exit_above, trend_sma_days)
+        weights[sym] = one[sym] / len(symbols)
+    return weights
+
+
 STRATEGIES = {
     "trend_sma": trend_sma,
     "dual_momentum": dual_momentum,
     "rsi_reversion": rsi_reversion,
+    "sector_rotation": sector_rotation,
+    "rsi_basket": rsi_basket,
 }
 
 
 def symbols_for(name: str, params: dict) -> list[str]:
     """Every symbol a strategy needs price data for."""
     syms = []
-    for key in ("symbol", "safe_asset"):
+    for key in ("symbol", "safe_asset", "market"):
         if key in params:
             syms.append(params[key])
-    syms += list(params.get("risk_assets", []))
+    syms += list(params.get("risk_assets", [])) + list(params.get("symbols", []))
     return list(dict.fromkeys(syms))
 
 
