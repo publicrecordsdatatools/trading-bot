@@ -1,0 +1,7 @@
+pandas>=2.2
+numpy>=1.26
+yfinance>=0.2.50
+alpaca-py>=0.30
+matplotlib>=3.8
+python-dotenv>=1.0
+pytest>=8.0

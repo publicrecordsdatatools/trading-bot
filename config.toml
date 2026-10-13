@@ -1,0 +1,46 @@
+# Trading system configuration. Risk limits here are enforced in code (src/tradingbot/risk.py).
+
+[general]
+benchmark = "SPY"
+backtest_start = "2005-01-01"
+# Walk-forward split: parameters are judged in-sample before this date, then checked out-of-sample after it.
+out_of_sample_start = "2019-01-01"
+# Per-trade cost as a fraction of traded value (commission + slippage).
+cost_per_trade = 0.0005
+
+[strategy]
+# Which strategy the paper runner trades. One of: trend_sma, dual_momentum, rsi_reversion
+active = "trend_sma"
+
+[strategy.trend_sma]
+symbol = "SPY"
+safe_asset = "IEF"
+sma_days = 200
+
+[strategy.dual_momentum]
+risk_assets = ["SPY", "QQQ", "EFA"]
+safe_asset = "IEF"
+lookback_days = 252
+
+[strategy.rsi_reversion]
+symbol = "SPY"
+rsi_days = 2
+entry_below = 10
+exit_above = 70
+trend_sma_days = 200
+
+[risk]
+max_single_stock_weight = 0.25
+# ETFs may be held up to 100% of the account.
+etfs = ["SPY", "QQQ", "EFA", "IEF", "TLT", "GLD", "BIL"]
+daily_loss_limit = 0.03
+kill_switch_drawdown = 0.15
+min_price = 5.0
+min_avg_dollar_volume = 5_000_000
+# Skip rebalancing a position if the change is smaller than this fraction of equity.
+min_trade_fraction = 0.02
+
+[live]
+# Live trading also requires the env var TRADING_MODE=live. Leave false until Sam approves in writing.
+enabled = false
+max_capital = 1000

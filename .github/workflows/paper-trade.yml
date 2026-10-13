@@ -1,0 +1,47 @@
+name: paper-trade
+# Runs about 15 minutes before the US close on weekdays. Two times cover daylight saving
+# (19:45 and 20:45 UTC); the runner skips when the market is closed and is safe to run twice.
+on:
+  schedule:
+    - cron: "45 19,20 * * 1-5"
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: paper-trade
+jobs:
+  trade:
+    runs-on: ubuntu-latest
+    env:
+      ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+      ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+    steps:
+      - name: Check keys are configured
+        id: keys
+        run: |
+          if [ -z "$ALPACA_API_KEY" ]; then
+            echo "Alpaca secrets not set yet; skipping."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.keys.outputs.ready == 'true'
+      - uses: actions/setup-python@v5
+        if: steps.keys.outputs.ready == 'true'
+        with:
+          python-version: "3.12"
+      - if: steps.keys.outputs.ready == 'true'
+        run: pip install -r requirements.txt
+      - if: steps.keys.outputs.ready == 'true'
+        run: python -m tradingbot.runner
+        env:
+          PYTHONPATH: src
+      - name: Commit logs and risk state
+        if: always() && steps.keys.outputs.ready == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add logs/
+          git commit -m "Paper trade log $(date -u +%F)" || echo "No changes"
+          git push
