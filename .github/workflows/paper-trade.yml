@@ -1,7 +1,7 @@
 name: paper-trade
 # Runs about 15 minutes before the US close on weekdays. Two times cover daylight saving
 # (19:45 and 20:45 UTC); the runner skips when the market is closed and is safe to run twice.
-# Trades the main strategy, then the aggressive lab strategy in its own paper account.
+# Three paper accounts, one per risk level: main (middle), safe (low) and lab (high).
 # Each one is skipped until its Alpaca keys are added as repo secrets.
 on:
   schedule:
@@ -17,6 +17,8 @@ jobs:
     env:
       ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
       ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+      ALPACA_SAFE_API_KEY: ${{ secrets.ALPACA_SAFE_API_KEY }}
+      ALPACA_SAFE_SECRET_KEY: ${{ secrets.ALPACA_SAFE_SECRET_KEY }}
       ALPACA_LAB_API_KEY: ${{ secrets.ALPACA_LAB_API_KEY }}
       ALPACA_LAB_SECRET_KEY: ${{ secrets.ALPACA_LAB_SECRET_KEY }}
       PYTHONPATH: src
@@ -25,25 +27,30 @@ jobs:
         id: keys
         run: |
           echo "main=$([ -n "$ALPACA_API_KEY" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "safe=$([ -n "$ALPACA_SAFE_API_KEY" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
           echo "lab=$([ -n "$ALPACA_LAB_API_KEY" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
           [ -n "$ALPACA_API_KEY" ] || echo "Main Alpaca secrets not set; skipping main account."
+          [ -n "$ALPACA_SAFE_API_KEY" ] || echo "Safe Alpaca secrets not set; skipping safe account."
           [ -n "$ALPACA_LAB_API_KEY" ] || echo "Lab Alpaca secrets not set; skipping lab account."
       - uses: actions/checkout@v4
-        if: steps.keys.outputs.main == 'true' || steps.keys.outputs.lab == 'true'
+        if: steps.keys.outputs.main == 'true' || steps.keys.outputs.safe == 'true' || steps.keys.outputs.lab == 'true'
       - uses: actions/setup-python@v5
-        if: steps.keys.outputs.main == 'true' || steps.keys.outputs.lab == 'true'
+        if: steps.keys.outputs.main == 'true' || steps.keys.outputs.safe == 'true' || steps.keys.outputs.lab == 'true'
         with:
           python-version: "3.12"
-      - if: steps.keys.outputs.main == 'true' || steps.keys.outputs.lab == 'true'
+      - if: steps.keys.outputs.main == 'true' || steps.keys.outputs.safe == 'true' || steps.keys.outputs.lab == 'true'
         run: pip install -r requirements.txt
-      - name: Main strategy
+      - name: Main strategy (middle risk)
         if: steps.keys.outputs.main == 'true'
         run: python -m tradingbot.runner --profile main
-      - name: Lab strategy (paper only)
+      - name: Safe strategy (low risk, paper only)
+        if: always() && steps.keys.outputs.safe == 'true'
+        run: python -m tradingbot.runner --profile safe
+      - name: Lab strategy (high risk, paper only)
         if: always() && steps.keys.outputs.lab == 'true'
         run: python -m tradingbot.runner --profile lab
       - name: Commit logs and risk state
-        if: always() && (steps.keys.outputs.main == 'true' || steps.keys.outputs.lab == 'true')
+        if: always() && (steps.keys.outputs.main == 'true' || steps.keys.outputs.safe == 'true' || steps.keys.outputs.lab == 'true')
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

@@ -48,6 +48,8 @@ def isolated_state(tmp_path, monkeypatch):
     monkeypatch.setattr(runner, "TRADE_LOG", tmp_path / "trades.jsonl")
     monkeypatch.setattr(runner, "LAB_TRADE_LOG", tmp_path / "lab_trades.jsonl")
     monkeypatch.setattr(runner, "LAB_STATE_FILE", tmp_path / "lab_risk_state.json")
+    monkeypatch.setattr(runner, "SAFE_TRADE_LOG", tmp_path / "safe_trades.jsonl")
+    monkeypatch.setattr(runner, "SAFE_STATE_FILE", tmp_path / "safe_risk_state.json")
     monkeypatch.delenv("TRADING_MODE", raising=False)
 
 
@@ -184,3 +186,20 @@ def test_lab_kill_switch_is_separate_from_main(cfg, qqq_dip):
     broker = FakeBroker(equity=100_000.0, last_equity=100_000.0, cash=100_000.0)
     runner.run(broker, qqq_dip, volumes, cfg, profile="lab")
     assert broker.submitted and not broker.closed_all
+
+
+def test_safe_account_trades_conservative_mix_separately(cfg, uptrend, volumes):
+    broker = FakeBroker()
+    runner.run(broker, uptrend, volumes, cfg, profile="safe")
+    bought = {s: q for s, side, q in broker.submitted if side == "buy"}
+    assert bought == {"IEF": int(0.6 * 10_000 // 100), "SPY": int(0.4 * 10_000 // 599)}
+    assert runner.SAFE_TRADE_LOG.exists() and not runner.TRADE_LOG.exists()
+    assert runner.SAFE_STATE_FILE.exists() and not risk.STATE_FILE.exists()
+
+
+def test_safe_account_never_goes_live(cfg, monkeypatch):
+    monkeypatch.setenv("TRADING_MODE", "live")
+    cfg["live"]["enabled"] = True
+    prof = runner.resolve_profile(cfg, "safe")
+    assert prof["mode"] == "paper"
+    assert prof["keys"] == ("ALPACA_SAFE_API_KEY", "ALPACA_SAFE_SECRET_KEY")

@@ -20,6 +20,8 @@ log = logging.getLogger("tradingbot")
 TRADE_LOG = ROOT / "logs" / "trades.jsonl"
 LAB_TRADE_LOG = ROOT / "logs" / "lab_trades.jsonl"
 LAB_STATE_FILE = ROOT / "logs" / "lab_risk_state.json"
+SAFE_TRADE_LOG = ROOT / "logs" / "safe_trades.jsonl"
+SAFE_STATE_FILE = ROOT / "logs" / "safe_risk_state.json"
 
 
 def trading_mode(cfg: dict) -> str:
@@ -63,8 +65,9 @@ def _record(event: dict, path=None) -> None:
 
 
 def resolve_profile(cfg: dict, profile: str) -> dict:
-    """What a run trades and where it keeps its state. "main" is the real strategy; "lab" is the
-    aggressive experiment in its own Alpaca paper account, which can never go live."""
+    """What a run trades and where it keeps its state. Three accounts, one per risk level:
+    "main" (middle) is the main strategy; "safe" (low) and "lab" (high) each have their own
+    Alpaca paper account. Only "main" can ever go live."""
     if profile == "main":
         name = cfg["strategy"]["active"]
         params = cfg["strategy"][name]
@@ -78,6 +81,20 @@ def resolve_profile(cfg: dict, profile: str) -> dict:
             "log": None,  # TRADE_LOG
             "mode": trading_mode(cfg),
             "keys": ("ALPACA_API_KEY", "ALPACA_SECRET_KEY"),
+        }
+    if profile == "safe":
+        name = cfg["safe"]["strategy"]
+        params = cfg["strategy"][name]
+        return {
+            "name": name,
+            "params": params,
+            "weights": lambda closes: strategies.target_weights(name, closes, params),
+            "symbols": strategies.symbols_for(name, params),
+            "risk": cfg["risk"],
+            "state_file": SAFE_STATE_FILE,
+            "log": SAFE_TRADE_LOG,
+            "mode": "paper",
+            "keys": ("ALPACA_SAFE_API_KEY", "ALPACA_SAFE_SECRET_KEY"),
         }
     if profile == "lab":
         lp = cfg["lab"]["paper"]
@@ -194,7 +211,7 @@ def main() -> None:
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--profile", choices=["main", "lab"], default="main")
+    parser.add_argument("--profile", choices=["main", "safe", "lab"], default="main")
     run(profile=parser.parse_args().profile)
 
 

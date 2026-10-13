@@ -25,7 +25,7 @@ Then: set `live.enabled = true` and `live.max_capital` in `config.toml`, add `TR
 - `src/tradingbot/strategies.py` – closes → target weights. Weights on day t use data through t only.
 - `src/tradingbot/backtest.py` – weights at t earn returns on t+1; costs on turnover.
 - `src/tradingbot/risk.py` – hard limits, kill switch state in `logs/risk_state.json`.
-- `src/tradingbot/broker.py` – Alpaca wrapper. `runner.py` – the daily job.
+- `src/tradingbot/broker.py` – Alpaca wrapper. `runner.py` – the daily job; `--profile main|safe|lab` picks the account.
 - `scripts/backtest.py` – writes `reports/backtest-<date>.md/png`.
 - `src/tradingbot/lab.py` + `scripts/lab_backtest.py` – aggressive lab (3x leveraged ETFs), paper-only experiments, never traded by the runner. Includes a 1999+ crash test with a simulated 3x QQQ fund and $100→$1,000 odds. Params under `[lab]` in `config.toml`.
 - `.github/workflows/` – `tests` (on push), `backtest` and `lab-backtest` (manual), `paper-trade` (weekdays ~15:45 ET).
@@ -36,6 +36,7 @@ Then: set `live.enabled = true` and `live.max_capital` in `config.toml`, add `TR
 - First real backtest (`reports/backtest-2026-10-13.md`, 2006–2026): **no strategy beat buy-and-hold SPY on return out-of-sample** (2019+: SPY 17.5% CAGR vs trend_sma 11.5%, dual_momentum 15.8%). trend_sma's edge is risk, not return: in-sample it matched SPY's return with a -22% max drawdown vs SPY's -55% (2008), and out-of-sample Sharpe was about equal (0.90 vs 0.93). Kept as the paper strategy for that reason; revisit after paper results.
 - Lab results (`reports/lab-2026-10-13.md`): real 3x ETFs 2011–2026: TQQQ hold 40.9%/yr but -82% max DD; lev_trend 33.2%/yr, -56%; lev_rotation 26.4%, -71%; lev_dip 14.1%, -46%. Crash test from the March 2000 peak (simulated 3x QQQ, drag calibrated to match real TQQQ): 3x hold went to ~zero (-100%), lev_trend -95% DD, lev_dip held up best (12.0%/yr, -45%). Best odds of $100→$1,000 in 5 years: TQQQ hold 24% of windows (2011+) / 12% (2000+), with 16% / 43% of windows halving first.
 - Lab paper trading (connected 2026-10-13, $1,000 fake balance): `lev_dip` (RSI(2) dips in QQQ, trades TQQQ) in a second Alpaca paper account, keys `ALPACA_LAB_API_KEY`/`ALPACA_LAB_SECRET_KEY`. Run with `python -m tradingbot.runner --profile lab`; own log `logs/lab_trades.jsonl` and state `logs/lab_risk_state.json`. Looser limits in `[lab.paper]` (20% daily loss, 60% kill switch) because 3x ETFs swing hard. Always paper; the code refuses live for the lab profile.
+- Three paper accounts by risk level (Sam's request): high = lab `lev_dip`; middle = main `sector_rotation`; low = safe `conservative_trend` (40% SPY in uptrends, rest IEF; 100% IEF in downtrends). Safe account keys `ALPACA_SAFE_API_KEY`/`ALPACA_SAFE_SECRET_KEY`, `--profile safe`, own log `logs/safe_trades.jsonl` and state `logs/safe_risk_state.json`, main `[risk]` limits, paper only. Backtest: conservative_trend 6.0%/yr, -9% max DD in-sample; 5.0%/yr, -20.5% out-of-sample (2022, when bonds fell with stocks). Half the volatility of sector_rotation (7% vs 14%) but its worst drop was not smaller. rsi_basket is the alternative if smallest drops matter most (-9% worst, ~3.5%/yr).
 - Paper trading live since 2026-10-13 (Alpaca paper, ~$100k fake account). First order: buy 128 SPY.
 
 ## Maintenance checklist ("check on the trading system")
@@ -53,6 +54,7 @@ Then: set `live.enabled = true` and `live.max_capital` in `config.toml`, add `TR
 
 ## Decision log
 
+- 2026-10-13: Sam asked for three accounts at high, middle and low risk. Added `conservative_trend` and a third paper account (`safe`) for it. Chose it over `trend_sma` for low risk because trend_sma's risk was about the same as sector_rotation's.
 - 2026-10-13: Sam chose to paper trade `lev_dip` from the lab, alongside main `sector_rotation`, in a separate paper account.
 - 2026-10-13: Sam asked how to turn $100 into $1,000 with day trading and penny stocks. Told them plainly there's no reliable way and most day traders lose. They asked for aggressive strategies anyway, so built a separate paper-only lab with 3x leveraged ETF strategies. Penny stocks left out: no free historical data that includes delisted stocks, so any backtest would be badly biased. Leverage is allowed in the lab only.
 - 2026-10-13: Sam asked for more active trading. Added `sector_rotation` (weekly) and `rsi_basket` (RSI(2) dips across SPY/QQQ/IWM/DIA). Backtest 2019+: sector_rotation 10.6% CAGR, -15% max DD; rsi_basket 3.7%, -9%; SPY 17.5%, -34%. More trading did not earn more. Switched paper to sector_rotation (smallest drawdown, return close to trend_sma).

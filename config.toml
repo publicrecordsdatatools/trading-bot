@@ -50,6 +50,11 @@ entry_below = 10
 exit_above = 70
 trend_sma_days = 200
 
+# Low-risk account: its own Alpaca paper account (secrets ALPACA_SAFE_API_KEY / ALPACA_SAFE_SECRET_KEY).
+# Uses the main [risk] limits. Paper only for now.
+[safe]
+strategy = "conservative_trend"
+
 # Aggressive lab: paper-only experiments with 3x leveraged ETFs (src/tradingbot/lab.py).
 # The daily runner never trades these.
 [lab]
