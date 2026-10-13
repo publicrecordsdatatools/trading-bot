@@ -10,7 +10,7 @@ cost_per_trade = 0.0005
 
 [strategy]
 # Which strategy the paper runner trades. One of: trend_sma, dual_momentum, rsi_reversion, sector_rotation, rsi_basket
-active = "trend_sma"
+active = "sector_rotation"
 
 [strategy.trend_sma]
 symbol = "SPY"

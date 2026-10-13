@@ -31,7 +31,7 @@ Then: set `live.enabled = true` and `live.max_capital` in `config.toml`, add `TR
 
 ## Current state
 
-- Active strategy: `trend_sma` (SPY above 200-day SMA, else IEF).
+- Active strategy: `sector_rotation` (top 3 of 9 sector ETFs by 3-month return, rebalanced weekly; IEF when SPY is below its 200-day SMA). Switched from `trend_sma` because Sam wants more active trading.
 - First real backtest (`reports/backtest-2026-10-13.md`, 2006–2026): **no strategy beat buy-and-hold SPY on return out-of-sample** (2019+: SPY 17.5% CAGR vs trend_sma 11.5%, dual_momentum 15.8%). trend_sma's edge is risk, not return: in-sample it matched SPY's return with a -22% max drawdown vs SPY's -55% (2008), and out-of-sample Sharpe was about equal (0.90 vs 0.93). Kept as the paper strategy for that reason; revisit after paper results.
 - Paper trading live since 2026-10-13 (Alpaca paper, ~$100k fake account). First order: buy 128 SPY.
 
@@ -50,5 +50,6 @@ Then: set `live.enabled = true` and `live.max_capital` in `config.toml`, add `TR
 
 ## Decision log
 
+- 2026-10-13: Sam asked for more active trading. Added `sector_rotation` (weekly) and `rsi_basket` (RSI(2) dips across SPY/QQQ/IWM/DIA). Backtest 2019+: sector_rotation 10.6% CAGR, -15% max DD; rsi_basket 3.7%, -9%; SPY 17.5%, -34%. More trading did not earn more. Switched paper to sector_rotation (smallest drawdown, return close to trend_sma).
 - 2026-10-13: First real backtest run; kept trend_sma for its lower drawdown, accepting lower return than SPY in the 2019+ bull market.
 - 2026-10-13: Initial build. Alpaca paper, US ETFs, daily bars, $1,000 planned live capital. Default strategy `trend_sma`.
