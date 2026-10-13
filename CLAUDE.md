@@ -31,8 +31,8 @@ Then: set `live.enabled = true` and `live.max_capital` in `config.toml`, add `TR
 
 ## Current state
 
-- Active strategy: `trend_sma` (SPY above 200-day SMA, else IEF). Chosen as the simplest default, not yet on evidence.
-- Backtests have **not** been run on real data yet: the cloud session that built this couldn't reach market data hosts. First job is to run `python scripts/backtest.py` (locally or via the `backtest` workflow) and pick the active strategy from the out-of-sample results.
+- Active strategy: `trend_sma` (SPY above 200-day SMA, else IEF).
+- First real backtest (`reports/backtest-2026-10-13.md`, 2006–2026): **no strategy beat buy-and-hold SPY on return out-of-sample** (2019+: SPY 17.5% CAGR vs trend_sma 11.5%, dual_momentum 15.8%). trend_sma's edge is risk, not return: in-sample it matched SPY's return with a -22% max drawdown vs SPY's -55% (2008), and out-of-sample Sharpe was about equal (0.90 vs 0.93). Kept as the paper strategy for that reason; revisit after paper results.
 - Paper trading starts once Alpaca paper keys are added as repo secrets.
 
 ## Maintenance checklist ("check on the trading system")
@@ -45,10 +45,10 @@ Then: set `live.enabled = true` and `live.max_capital` in `config.toml`, add `TR
 
 ## Next steps
 
-- Run real backtests and choose the active strategy.
 - Add a weekly summary report (positions, P&L vs SPY, errors) generated from the Alpaca account and trade log.
 - Consider a regime check on data quality (missing bars, stale prices) before each run.
 
 ## Decision log
 
+- 2026-10-13: First real backtest run; kept trend_sma for its lower drawdown, accepting lower return than SPY in the 2019+ bull market.
 - 2026-10-13: Initial build. Alpaca paper, US ETFs, daily bars, $1,000 planned live capital. Default strategy `trend_sma`.
