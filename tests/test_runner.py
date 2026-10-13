@@ -35,6 +35,13 @@ class FakeBroker:
         self.pos = {}
 
 
+@pytest.fixture
+def cfg(cfg):
+    """Runner mechanics are tested with the simple SPY/IEF trend strategy, whatever config.toml has active."""
+    cfg["strategy"]["active"] = "trend_sma"
+    return cfg
+
+
 @pytest.fixture(autouse=True)
 def isolated_state(tmp_path, monkeypatch):
     monkeypatch.setattr(risk, "STATE_FILE", tmp_path / "risk_state.json")
@@ -115,3 +122,25 @@ def test_paper_is_default(cfg):
 def test_small_rebalances_skipped():
     orders = runner.plan_orders({"SPY": 1.0}, {"SPY": 99}, {"SPY": 100.0}, 10_000.0, 0.02)
     assert orders == []
+
+
+def test_switch_to_sector_rotation_sells_spy_and_buys_sectors(cfg):
+    import numpy as np
+
+    cfg["strategy"]["active"] = "sector_rotation"
+    sectors = cfg["strategy"]["sector_rotation"]["risk_assets"]
+    idx = pd.bdate_range("2023-01-02", periods=300)
+    rng = np.random.default_rng(2)
+    data = {s: 50 * np.cumprod(1 + rng.normal(0.001, 0.01, len(idx))) for s in sectors}
+    data["SPY"] = np.linspace(300, 600, len(idx))  # market in an uptrend
+    data["IEF"] = np.full(len(idx), 100.0)
+    closes = pd.DataFrame(data, index=idx)
+    volumes = pd.DataFrame(1e8, index=idx, columns=closes.columns)
+
+    broker = FakeBroker(positions={"SPY": 16})
+    broker.acct = Account(equity=10_000.0, last_equity=10_000.0, cash=400.0)
+    runner.run(broker, closes, volumes, cfg)
+
+    assert broker.submitted[0] == ("SPY", "sell", 16)
+    bought = [s for s, side, _ in broker.submitted if side == "buy"]
+    assert len(bought) == 3 and set(bought) <= set(sectors)
