@@ -33,7 +33,7 @@ Then: set `live.enabled = true` and `live.max_capital` in `config.toml`, add `TR
 
 - Active strategy: `trend_sma` (SPY above 200-day SMA, else IEF).
 - First real backtest (`reports/backtest-2026-10-13.md`, 2006–2026): **no strategy beat buy-and-hold SPY on return out-of-sample** (2019+: SPY 17.5% CAGR vs trend_sma 11.5%, dual_momentum 15.8%). trend_sma's edge is risk, not return: in-sample it matched SPY's return with a -22% max drawdown vs SPY's -55% (2008), and out-of-sample Sharpe was about equal (0.90 vs 0.93). Kept as the paper strategy for that reason; revisit after paper results.
-- Paper trading starts once Alpaca paper keys are added as repo secrets.
+- Paper trading live since 2026-10-13 (Alpaca paper, ~$100k fake account). First order: buy 128 SPY.
 
 ## Maintenance checklist ("check on the trading system")
 
