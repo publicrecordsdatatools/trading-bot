@@ -3,3 +3,4 @@
 {"time": "2026-10-13T18:33:25.439653+00:00", "event": "order", "mode": "paper", "id": "4427c39a-66f0-486a-a5fd-31e6a1132906", "symbol": "XLE", "side": "buy", "qty": 497, "price": 66.9749984741211}
 {"time": "2026-10-13T18:33:25.512204+00:00", "event": "order", "mode": "paper", "id": "4835c0da-5166-426f-abb1-ed1edce713ad", "symbol": "XLK", "side": "buy", "qty": 170, "price": 195.94500732421875}
 {"time": "2026-10-13T18:33:25.591547+00:00", "event": "order", "mode": "paper", "id": "f26cdbc8-bc79-4081-8f1e-be15a2e5b6e8", "symbol": "XLV", "side": "buy", "qty": 196, "price": 169.8699951171875}
+{"time": "2026-10-13T18:43:53.852687+00:00", "event": "no_change", "strategy": "sector_rotation", "targets": {"XLK": 0.3333333333333333, "XLE": 0.3333333333333333, "XLV": 0.3333333333333333}}
