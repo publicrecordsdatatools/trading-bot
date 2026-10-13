@@ -54,6 +54,8 @@ trend_sma_days = 200
 # Uses the main [risk] limits. Paper only for now.
 [safe]
 strategy = "conservative_trend"
+# Buy fractions of a share, so a $1,000 account can hold its 40% slice of SPY.
+fractional = true
 
 # Aggressive lab: paper-only experiments with 3x leveraged ETFs (src/tradingbot/lab.py).
 # The daily runner never trades these.
@@ -90,6 +92,7 @@ trend_sma_days = 200
 # because 3x ETFs often move more than 3% in a day and the dip strategy buys after drops.
 [lab.paper]
 strategy = "lev_dip"
+fractional = true
 daily_loss_limit = 0.20
 kill_switch_drawdown = 0.60
 extra_etfs = ["TQQQ", "UPRO", "TNA", "SOXL", "SOXX"]

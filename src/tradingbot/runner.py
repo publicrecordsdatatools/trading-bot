@@ -8,6 +8,7 @@ while earlier orders are still open.
 
 import json
 import logging
+import math
 import os
 from datetime import datetime, timezone
 
@@ -35,17 +36,21 @@ def trading_mode(cfg: dict) -> str:
 
 def plan_orders(
     targets: dict[str, float],
-    positions: dict[str, int],
+    positions: dict[str, float],
     prices: dict[str, float],
     equity: float,
     min_trade_fraction: float,
+    fractional: bool = False,
 ) -> list[risk.Order]:
-    """Whole-share orders that move current positions to target weights. Sells come first."""
+    """Orders that move current positions to target weights. Sells come first.
+    Whole shares by default; with `fractional`, quantities are rounded down to 0.001 of a share
+    so small accounts can hold expensive ETFs."""
     orders = []
     for sym in sorted(set(targets) | set(positions)):
         price = prices[sym]
-        target_qty = int(targets.get(sym, 0.0) * equity // price)
-        diff = target_qty - positions.get(sym, 0)
+        shares = targets.get(sym, 0.0) * equity / price
+        target_qty = math.floor(shares * 1000) / 1000 if fractional else int(shares)
+        diff = round(target_qty - positions.get(sym, 0), 3)
         if diff == 0:
             continue
         # Skip tiny rebalances, but always fully exit a position the strategy no longer wants.
@@ -81,6 +86,7 @@ def resolve_profile(cfg: dict, profile: str) -> dict:
             "log": None,  # TRADE_LOG
             "mode": trading_mode(cfg),
             "keys": ("ALPACA_API_KEY", "ALPACA_SECRET_KEY"),
+            "fractional": False,
         }
     if profile == "safe":
         name = cfg["safe"]["strategy"]
@@ -95,6 +101,7 @@ def resolve_profile(cfg: dict, profile: str) -> dict:
             "log": SAFE_TRADE_LOG,
             "mode": "paper",
             "keys": ("ALPACA_SAFE_API_KEY", "ALPACA_SAFE_SECRET_KEY"),
+            "fractional": cfg["safe"].get("fractional", False),
         }
     if profile == "lab":
         lp = cfg["lab"]["paper"]
@@ -116,6 +123,7 @@ def resolve_profile(cfg: dict, profile: str) -> dict:
             "log": LAB_TRADE_LOG,
             "mode": "paper",
             "keys": ("ALPACA_LAB_API_KEY", "ALPACA_LAB_SECRET_KEY"),
+            "fractional": lp.get("fractional", False),
         }
     raise ValueError(f"unknown profile {profile}")
 
@@ -177,7 +185,7 @@ def run(
         positions = {s: q for s, q in positions.items() if s not in missing}
 
     equity = min(account.equity, cfg["live"]["max_capital"]) if mode == "live" else account.equity
-    orders = plan_orders(targets, positions, held_prices, equity, rcfg["min_trade_fraction"])
+    orders = plan_orders(targets, positions, held_prices, equity, rcfg["min_trade_fraction"], prof["fractional"])
 
     placed = []
     cash = account.cash
@@ -189,7 +197,11 @@ def run(
         if not check.ok:
             record({"event": "order_rejected", "order": order.__dict__, "reasons": check.reasons})
             continue
-        order_id = broker.submit(order.symbol, order.side, order.qty)
+        try:
+            order_id = broker.submit(order.symbol, order.side, order.qty)
+        except Exception as e:  # e.g. the broker rejects the order; log it and carry on
+            record({"event": "order_error", "order": order.__dict__, "error": str(e)})
+            continue
         cash += order.qty * order.price * (1 if order.side == "sell" else -1)
         event = {"event": "order", "mode": mode, "id": order_id, **order.__dict__}
         record(event)

@@ -29,8 +29,8 @@ class AlpacaBroker:
         a = self.client.get_account()
         return Account(equity=float(a.equity), last_equity=float(a.last_equity), cash=float(a.cash))
 
-    def positions(self) -> dict[str, int]:
-        return {p.symbol: int(float(p.qty)) for p in self.client.get_all_positions()}
+    def positions(self) -> dict[str, float]:
+        return {p.symbol: float(p.qty) for p in self.client.get_all_positions()}
 
     def has_open_orders(self) -> bool:
         from alpaca.trading.enums import QueryOrderStatus
@@ -38,7 +38,7 @@ class AlpacaBroker:
 
         return bool(self.client.get_orders(GetOrdersRequest(status=QueryOrderStatus.OPEN)))
 
-    def submit(self, symbol: str, side: str, qty: int) -> str:
+    def submit(self, symbol: str, side: str, qty: float) -> str:
         from alpaca.trading.enums import OrderSide, TimeInForce
         from alpaca.trading.requests import MarketOrderRequest
 

@@ -192,7 +192,7 @@ def test_safe_account_trades_conservative_mix_separately(cfg, uptrend, volumes):
     broker = FakeBroker()
     runner.run(broker, uptrend, volumes, cfg, profile="safe")
     bought = {s: q for s, side, q in broker.submitted if side == "buy"}
-    assert bought == {"IEF": int(0.6 * 10_000 // 100), "SPY": int(0.4 * 10_000 // 599)}
+    assert bought == {"IEF": 60.0, "SPY": pytest.approx(6.677)}
     assert runner.SAFE_TRADE_LOG.exists() and not runner.TRADE_LOG.exists()
     assert runner.SAFE_STATE_FILE.exists() and not risk.STATE_FILE.exists()
 
@@ -203,3 +203,26 @@ def test_safe_account_never_goes_live(cfg, monkeypatch):
     prof = runner.resolve_profile(cfg, "safe")
     assert prof["mode"] == "paper"
     assert prof["keys"] == ("ALPACA_SAFE_API_KEY", "ALPACA_SAFE_SECRET_KEY")
+
+
+def test_fractional_lets_small_accounts_hold_expensive_etfs():
+    whole = runner.plan_orders({"SPY": 0.4, "IEF": 0.6}, {}, {"SPY": 778.0, "IEF": 89.5}, 1000.0, 0.02)
+    assert [o.symbol for o in whole] == ["IEF"], "whole shares can't afford SPY"
+    frac = runner.plan_orders({"SPY": 0.4, "IEF": 0.6}, {}, {"SPY": 778.0, "IEF": 89.5}, 1000.0, 0.02, fractional=True)
+    qty = {o.symbol: o.qty for o in frac}
+    assert qty == {"IEF": 6.703, "SPY": 0.514}
+
+
+def test_fractional_tops_up_existing_whole_shares():
+    orders = runner.plan_orders({"SPY": 0.4, "IEF": 0.6}, {"IEF": 6.0}, {"SPY": 778.0, "IEF": 89.5}, 1000.0, 0.02, True)
+    assert [(o.symbol, o.side, o.qty) for o in orders] == [("IEF", "buy", 0.703), ("SPY", "buy", 0.514)]
+
+
+def test_rejected_order_is_logged_not_fatal(cfg, uptrend, volumes):
+    class RejectingBroker(FakeBroker):
+        def submit(self, symbol, side, qty):
+            raise RuntimeError("asset not fractionable")
+
+    broker = RejectingBroker()
+    assert runner.run(broker, uptrend, volumes, cfg) == []
+    assert "order_error" in runner.TRADE_LOG.read_text()

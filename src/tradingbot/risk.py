@@ -37,7 +37,7 @@ class RiskState:
 class Order:
     symbol: str
     side: str  # "buy" or "sell"
-    qty: int
+    qty: float
     price: float
 
 
