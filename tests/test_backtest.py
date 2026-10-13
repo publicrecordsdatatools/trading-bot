@@ -94,3 +94,11 @@ def test_rsi_basket_splits_account(closes):
     w = strategies.rsi_basket(closes, symbols=["SPY", "QQQ"])
     assert (w[["SPY", "QQQ"]].isin([0.0, 0.5])).all().all()
     assert (w.sum(axis=1) <= 1.0 + 1e-9).all()
+
+
+def test_conservative_trend_is_mostly_bonds(closes):
+    w = strategies.conservative_trend(closes, stock_weight=0.4)
+    live = w.iloc[250:]
+    assert ((live.sum(axis=1) - 1.0).abs() < 1e-9).all()
+    assert set(live["SPY"].round(9).unique()) <= {0.0, 0.4}
+    assert (live.loc[live["SPY"] == 0, "IEF"] == 1.0).all()

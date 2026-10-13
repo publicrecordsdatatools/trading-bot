@@ -20,6 +20,22 @@ def trend_sma(closes: pd.DataFrame, symbol: str = "SPY", safe_asset: str = "IEF"
     return weights
 
 
+def conservative_trend(
+    closes: pd.DataFrame,
+    symbol: str = "SPY",
+    safe_asset: str = "IEF",
+    sma_days: int = 200,
+    stock_weight: float = 0.4,
+) -> pd.DataFrame:
+    """A mostly-bonds portfolio: `stock_weight` in `symbol` while it is above its moving average,
+    everything else (and everything, in downtrends) in `safe_asset`."""
+    weights = trend_sma(closes, symbol, safe_asset, sma_days)
+    invested = weights.sum(axis=1) > 0
+    weights[symbol] = weights[symbol] * stock_weight
+    weights[safe_asset] = invested.astype(float) - weights[symbol]
+    return weights
+
+
 def dual_momentum(
     closes: pd.DataFrame,
     risk_assets: list[str] = ("SPY", "QQQ", "EFA"),
@@ -135,6 +151,7 @@ def rsi_basket(
 
 STRATEGIES = {
     "trend_sma": trend_sma,
+    "conservative_trend": conservative_trend,
     "dual_momentum": dual_momentum,
     "rsi_reversion": rsi_reversion,
     "sector_rotation": sector_rotation,

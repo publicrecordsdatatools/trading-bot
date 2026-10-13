@@ -9,13 +9,19 @@ out_of_sample_start = "2019-01-01"
 cost_per_trade = 0.0005
 
 [strategy]
-# Which strategy the paper runner trades. One of: trend_sma, dual_momentum, rsi_reversion, sector_rotation, rsi_basket
+# Which strategy the paper runner trades. One of: trend_sma, conservative_trend, dual_momentum, rsi_reversion, sector_rotation, rsi_basket
 active = "sector_rotation"
 
 [strategy.trend_sma]
 symbol = "SPY"
 safe_asset = "IEF"
 sma_days = 200
+
+[strategy.conservative_trend]
+symbol = "SPY"
+safe_asset = "IEF"
+sma_days = 200
+stock_weight = 0.4
 
 [strategy.dual_momentum]
 risk_assets = ["SPY", "QQQ", "EFA"]
