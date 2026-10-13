@@ -28,26 +28,26 @@ def _download(symbol: str, start: str) -> pd.DataFrame:
     return df[["Open", "High", "Low", "Close", "Volume"]]
 
 
-def load_bars(symbol: str, start: str = "2000-01-01", refresh: bool = False) -> pd.DataFrame:
+def load_bars(symbol: str, start: str = "1993-01-01", refresh: bool = False) -> pd.DataFrame:
     """Return daily OHLCV bars for one symbol, using the cache when it is current."""
     path = _cache_path(symbol)
     if path.exists() and not refresh:
         df = pd.read_csv(path, index_col="date", parse_dates=True)
         if df.index[-1].date() >= _last_expected_close():
             return df.loc[start:]
-    df = _download(symbol, "2000-01-01")
+    df = _download(symbol, "1993-01-01")
     CACHE_DIR.mkdir(exist_ok=True)
     df.to_csv(path)
     return df.loc[start:]
 
 
-def load_closes(symbols: list[str], start: str = "2000-01-01", refresh: bool = False) -> pd.DataFrame:
+def load_closes(symbols: list[str], start: str = "1993-01-01", refresh: bool = False) -> pd.DataFrame:
     """Adjusted closes, one column per symbol, only on dates where every symbol traded."""
     closes = {s: load_bars(s, start, refresh)["Close"] for s in symbols}
     return pd.DataFrame(closes).dropna()
 
 
-def load_volumes(symbols: list[str], start: str = "2000-01-01") -> pd.DataFrame:
+def load_volumes(symbols: list[str], start: str = "1993-01-01") -> pd.DataFrame:
     return pd.DataFrame({s: load_bars(s, start)["Volume"] for s in symbols}).dropna()
 
 
