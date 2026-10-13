@@ -147,7 +147,7 @@ def _plot(real: pd.DataFrame, sim: pd.DataFrame, path: Path) -> None:
     import matplotlib.pyplot as plt
 
     fig, axes = plt.subplots(2, 1, figsize=(10, 9))
-    for ax, eq, title in ((axes[0], real, "Real 3x ETFs"), (axes[1], sim, "Crash test: simulated 3x QQQ since 1999")):
+    for ax, eq, title in ((axes[0], real, "Real 3x ETFs"), (axes[1], sim, "Crash test: simulated 3x QQQ from the 2000 peak")):
         for col in eq.columns:
             ax.plot(eq.index, eq[col], label=col, linewidth=1.1)
         ax.set_yscale("log")

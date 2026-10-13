@@ -34,6 +34,7 @@ Then: set `live.enabled = true` and `live.max_capital` in `config.toml`, add `TR
 
 - Active strategy: `sector_rotation` (top 3 of 9 sector ETFs by 3-month return, rebalanced weekly; IEF when SPY is below its 200-day SMA). Switched from `trend_sma` because Sam wants more active trading.
 - First real backtest (`reports/backtest-2026-10-13.md`, 2006–2026): **no strategy beat buy-and-hold SPY on return out-of-sample** (2019+: SPY 17.5% CAGR vs trend_sma 11.5%, dual_momentum 15.8%). trend_sma's edge is risk, not return: in-sample it matched SPY's return with a -22% max drawdown vs SPY's -55% (2008), and out-of-sample Sharpe was about equal (0.90 vs 0.93). Kept as the paper strategy for that reason; revisit after paper results.
+- Lab results (`reports/lab-2026-10-13.md`): real 3x ETFs 2011–2026: TQQQ hold 40.9%/yr but -82% max DD; lev_trend 33.2%/yr, -56%; lev_rotation 26.4%, -71%; lev_dip 14.1%, -46%. Crash test from the March 2000 peak (simulated 3x QQQ, drag calibrated to match real TQQQ): 3x hold went to ~zero (-100%), lev_trend -95% DD, lev_dip held up best (12.0%/yr, -45%). Best odds of $100→$1,000 in 5 years: TQQQ hold 24% of windows (2011+) / 12% (2000+), with 16% / 43% of windows halving first.
 - Paper trading live since 2026-10-13 (Alpaca paper, ~$100k fake account). First order: buy 128 SPY.
 
 ## Maintenance checklist ("check on the trading system")
