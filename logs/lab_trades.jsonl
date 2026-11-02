@@ -31,3 +31,4 @@
 {"time": "2026-10-29T21:19:40.471600+00:00", "event": "skip", "reason": "market closed"}
 {"time": "2026-10-30T20:18:00.728301+00:00", "event": "skip", "reason": "market closed"}
 {"time": "2026-10-30T21:16:36.270568+00:00", "event": "skip", "reason": "market closed"}
+{"time": "2026-11-02T20:24:58.608230+00:00", "event": "order", "mode": "paper", "id": "1f5fa522-be0c-46c6-a3b2-1863b4c96fb0", "symbol": "TQQQ", "side": "buy", "qty": 16.507, "price": 60.5791015625}

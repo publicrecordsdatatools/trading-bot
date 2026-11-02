@@ -39,3 +39,6 @@
 {"time": "2026-10-29T21:19:39.645052+00:00", "event": "skip", "reason": "market closed"}
 {"time": "2026-10-30T20:17:59.883529+00:00", "event": "skip", "reason": "market closed"}
 {"time": "2026-10-30T21:16:35.481190+00:00", "event": "skip", "reason": "market closed"}
+{"time": "2026-11-02T20:24:51.552594+00:00", "event": "order", "mode": "paper", "id": "6fc53dd8-7733-4514-9c03-c6e7cd3f5505", "symbol": "XLK", "side": "sell", "qty": 1.701, "price": 175.60000610351562}
+{"time": "2026-11-02T20:24:51.564528+00:00", "event": "order", "mode": "paper", "id": "ed567dac-94a0-484c-864a-77b44387a971", "symbol": "XLV", "side": "sell", "qty": 0.167, "price": 185.00999450683594}
+{"time": "2026-11-02T20:24:51.629905+00:00", "event": "order_rejected", "order": {"symbol": "XLP", "side": "buy", "qty": 3.665, "price": 90.7249984741211}, "reasons": ["order value 332.51 exceeds cash 329.71 (no margin)"]}
