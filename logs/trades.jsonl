@@ -44,3 +44,4 @@
 {"time": "2026-11-02T20:24:51.629905+00:00", "event": "order_rejected", "order": {"symbol": "XLP", "side": "buy", "qty": 3.665, "price": 90.7249984741211}, "reasons": ["order value 332.51 exceeds cash 329.71 (no margin)"]}
 {"time": "2026-11-02T21:24:02.594783+00:00", "event": "skip", "reason": "market closed"}
 {"time": "2026-11-03T20:27:51.341972+00:00", "event": "order_rejected", "order": {"symbol": "XLP", "side": "buy", "qty": 3.712, "price": 89.1050033569336}, "reasons": ["order value 330.76 exceeds cash 329.71 (no margin)"]}
+{"time": "2026-11-03T21:23:23.922674+00:00", "event": "skip", "reason": "market closed"}
