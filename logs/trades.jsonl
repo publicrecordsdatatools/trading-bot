@@ -47,3 +47,4 @@
 {"time": "2026-11-03T21:23:23.922674+00:00", "event": "skip", "reason": "market closed"}
 {"time": "2026-11-04T20:28:53.035737+00:00", "event": "order", "mode": "paper", "id": "8383a8e6-a86f-4a89-b216-31cab19219b5", "symbol": "XLP", "side": "buy", "qty": 3.565, "price": 92.08000183105469}
 {"time": "2026-11-04T21:28:54.859288+00:00", "event": "skip", "reason": "market closed"}
+{"time": "2026-11-05T20:27:39.879486+00:00", "event": "no_change", "strategy": "sector_rotation", "targets": {"XLE": 0.3333333333333333, "XLV": 0.3333333333333333, "XLP": 0.3333333333333333}}

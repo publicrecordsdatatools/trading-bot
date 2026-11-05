@@ -37,3 +37,4 @@
 {"time": "2026-11-03T21:23:24.753584+00:00", "event": "skip", "reason": "market closed"}
 {"time": "2026-11-04T20:28:54.966390+00:00", "event": "no_change", "strategy": "lev_dip", "targets": {"TQQQ": 1.0}}
 {"time": "2026-11-04T21:28:55.382041+00:00", "event": "skip", "reason": "market closed"}
+{"time": "2026-11-05T20:27:42.008722+00:00", "event": "order", "mode": "paper", "id": "624f5026-b847-4160-afef-92c34435c84e", "symbol": "TQQQ", "side": "sell", "qty": 16.507, "price": 51.58250045776367}
