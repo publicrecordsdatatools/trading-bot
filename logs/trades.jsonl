@@ -58,3 +58,4 @@
 {"time": "2026-11-11T21:06:12.338080+00:00", "event": "skip", "reason": "market closed"}
 {"time": "2026-11-12T20:28:25.236475+00:00", "event": "no_change", "strategy": "sector_rotation", "targets": {"XLE": 0.3333333333333333, "XLV": 0.3333333333333333, "XLP": 0.3333333333333333}}
 {"time": "2026-11-13T01:28:32.546353+00:00", "event": "skip", "reason": "market closed"}
+{"time": "2026-11-14T00:28:35.008503+00:00", "event": "skip", "reason": "market closed"}
